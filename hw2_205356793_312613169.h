@@ -85,12 +85,80 @@ FILE **create_counter_files(int num_counter){
 }
 
 //This function iterates over the nodes in the queue and returns the last node which holds the last job in the queue
-job_node *get_last_job_from_queue(job_node *head) {
+job_node *get_last_job_from_queue() {
     job_node *last = head;
     while (last->next != NULL){
         last = last->next;
     }
     return last;
+}
+
+insert_job_to_queue (char line[MAX_LINE_LENGTH])
+{
+    job_node *last = get_last_job_from_queue();
+    job_node *new_node = (job_node*)malloc(sizeof(job_node));
+    if (new_node == NULL){
+        // Couldn't allocate memory for a new job_node
+        printf("Couldn't allocate memory for a new job_node");
+        exit(-1);
+    }
+    new_node->next = NULL;
+    strcpy(new_node->text, line);
+    last->next = new_node;
+}
+
+void execute_command(char *command){
+    printf("command received: %s\n", command);
+}
+
+void parse_worker_line(char *line, int thread_id){
+    char *line_ptr, *cmd_ptr, *rmn_ptr, *command;
+    char *temp_line;
+    char *remaining_line=line; //initially remain equals to the whole line argument
+
+    // if (log_handler == 1) {
+    //     //write to thread_file[thread_id]
+    // }
+
+    line_ptr = strtok_r(line, ";", &remaining_line); //break the line by semicolons
+    while (line_ptr != NULL)
+    {
+        if (strstr(line_ptr, "repeat"))
+        {
+            char *integers = "1234567890";
+            char *num = strpbrk(line_ptr, integers);
+            temp_line = strdup(remaining_line);
+            strcpy(temp_line, remaining_line);
+            char *origin = strdup(remaining_line); //to keep track on the original line
+            command = strtok_r(temp_line, ";",&remaining_line);
+            for (int i = 0; i<atoi(num); i++){
+                while (command != NULL){
+                    execute_command(command);
+                    //printf("current command: %s\n", command);
+                    command = strtok_r(NULL, ";", &remaining_line);
+                }
+                if (i == 0) {
+                    command = strdup(origin);
+                    cmd_ptr = command; //keep track on original command address
+                    remaining_line = strdup(origin);
+                    rmn_ptr = remaining_line; //keep track on original remain address
+                }
+                else {
+                    command = cmd_ptr; //rewind command to the begining
+                    remaining_line = strcpy(remaining_line,command); //copy command to remain to start over
+                }
+                command = strtok_r(NULL, ";", &remaining_line);                                
+            }
+            //command = strtok_r(NULL, ";", &remain);
+            free(temp_line);
+            free(origin);
+            free(rmn_ptr);
+            command = cmd_ptr;
+            free(command);
+        }
+        execute_command(line_ptr);
+        line_ptr = strtok_r(NULL, ";", &remaining_line);
+    }
 }
 
 //This function receives the thread_data struct as an argument and handles this specific thread work load

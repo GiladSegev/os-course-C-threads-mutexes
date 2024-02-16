@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
     counter_files_array = create_counter_files(num_of_files);
 
     // Init num_of_threads threads
-    init_threads(num_of_threads, log_handler);
+    init_threads(num_of_threads);
 
     // Initializing mutex for jobs linked list. REMEBER TO DESTROY
     if (pthread_mutex_init(&mutex, NULL)!=0){
@@ -70,8 +70,9 @@ int main(int argc, char **argv) {
     // Dispatcher 
     char *word;
     int is_worker, i;
-    int mili_sec = 0;
+    int milli_sec = 0;
     int wait;
+    int status;
     while (fgets(line, sizeof(line), read_commands_file) != NULL)
     {
         // Checking a if the line starts with 'worker'
@@ -80,13 +81,13 @@ int main(int argc, char **argv) {
         {
             if (strcmp(word, "worker") == 0){ // in case of worker command line
                 // Sending the command line to designated worker function
-                worker(line); // IN GENERAL
+                insert_job_to_quewe(line); // IN GENERAL
             } 
             else{ // in case of a dispatcher command line
                 if (strcmp(word, "dispatcher_msleep") == 0){
                     word = strtok(NULL, " ");
-                    mili_sec = atoi(word)/1000;
-                    sleep(mili_sec);
+                    milli_sec = atoi(word)/1000;
+                    sleep(milli_sec);
                 }
                 else if (strcmp(word, "dispatcher_wait") == 0){
                     do{
