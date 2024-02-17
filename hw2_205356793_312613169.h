@@ -18,8 +18,8 @@ typedef struct thread_data {
 //Jobs will be implemented as a linked list. each job will have text field to store the command it needs to do.
 typedef struct job_node {
     char text[MAX_LINE_LENGTH];
-    struct job_node *next;
     time_t time; // job record time
+    struct job_node *next;
 } job_node;
 
 pthread_mutex_t mutex; //mutex for job queue
@@ -36,6 +36,7 @@ FILE **counter_files_array; // Init counter files array
 FILE *stat_boy; // File to store the program statistics
 // Init statistics variables
 int sum_of_jobs_run_time = 0, min_job_run_time = -1, max_job_run_time = 0, avg_job_run_time = 0, num_of_jobs = 0; 
+
 
 void init_stat_file()
 {
@@ -310,6 +311,12 @@ void terminate_program(FILE *command_file, FILE **counter_files_array, int num_o
     {
         fclose(counter_files_array[i]);
     }
-    // NEED TO SEE IF NEED TO FREE ALSO JOBS LINKED LIST
+    
+    for (int i = 0 ; i < num_of_threads ; i++)
+    {
+        fclose(threads_logfiles[i]);
+    }
+    fclose(dispatcher_file);
+    fclose(stat_boy);
 }
 

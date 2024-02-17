@@ -117,14 +117,17 @@ int main(int argc, char **argv) {
     while(head != NULL) { // While there are jobs available go to sleep.
         pthread_cond_wait(&dispatcher_wait, &mutex);
     }
-    // Terminate the program - free all allocated memory
-    terminate_program(read_commands_file, counter_files_array, num_of_files); 
     // Init statistics file
     init_stat_file();
+    // Write statistics to stats.txt file
     fprintf(stat_boy, "total running time: %lld milliseconds", (((long long int)time(NULL) - start_time)/1000));
     fprintf(stat_boy, "sum of jobs turnaround time: %lld milliseconds", sum_of_jobs_run_time/1000);
     fprintf(stat_boy, "min job turnaround time: %lld milliseconds", min_job_run_time/1000);
     fprintf(stat_boy, "avarage job turnaround time: %f milliseconds", (sum_of_jobs_run_time/num_of_jobs)/1000);
     fprintf(stat_boy, "max job turnaround time: %lld milliseconds", max_job_run_time/1000);
+
+    // Terminate the program - free all allocated memory
+    terminate_program(read_commands_file, counter_files_array, num_of_files); 
+
     return 0;
 }
