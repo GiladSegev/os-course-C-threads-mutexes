@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "hw2_205356793_312613169.h"
 
 
 int main(int argc, char **argv) {
 
+    time_t run_start_time = time(NULL);
+    start_time = (long long int)run_start_time;
     FILE *read_commands_file; // Init file to store command text file from user
-    FILE **counter_files_array; // Init counter files array
     char line[MAX_LINE_LENGTH]; // Init string var to get the commands in the commands file line by line
 
     // User input validity check. Check all necessary files from user were inputted
@@ -14,19 +16,19 @@ int main(int argc, char **argv) {
         printf("Error: incompatible number of arguments.\n");
         exit(-1);
     }
-    int num_of_threads = atoi(argv[2]);
+    num_of_threads = atoi(argv[2]);
     printf("received num of threads: %d\n", num_of_threads);
     if (num_of_threads > MAX_THREADS_NUM){
         printf("num_of_threads exceeds max number. Exit program");
         exit(-1);
     }
-    int num_of_files = atoi(argv[3]);
+    num_of_files = atoi(argv[3]);
     printf("received num of files: %d\n", num_of_files);
     if (num_of_threads > MAX_COUNTER_FILES){
         printf("num_of_files exceeds max number. Exit program");
         exit(-1);
     }
-    int log_handler = atoi(argv[4]);
+    log_handler = atoi(argv[4]);
     printf("received log handler: %d\n",log_handler);
 
     // Read commands file from user input.
@@ -67,6 +69,7 @@ int main(int argc, char **argv) {
         }
     }
 
+
     // Dispatcher 
     char *word;
     int is_worker, i;
@@ -75,13 +78,19 @@ int main(int argc, char **argv) {
     int status;
     while (fgets(line, sizeof(line), read_commands_file) != NULL)
     {
+        if (log_handler == 1)
+        {
+            // Printing job start time to dispatcher.txt file
+            fprintf(dispatcher_file, "TIME %lld: read cmd line: %s\n", ((start_time - (long long int)time(NULL))/1000), line);
+        }
         // Checking a if the line starts with 'worker'
         word = strtok(line, " "); // readeing first word in the command
         while (word != NULL)
         {
             if (strcmp(word, "worker") == 0){ // in case of worker command line
                 // Sending the command line to designated worker function
-                insert_job_to_quewe(line); // IN GENERAL
+                insert_job_to_queue(line, time(NULL)); 
+                num_of_jobs++;
             } 
             else{ // in case of a dispatcher command line
                 if (strcmp(word, "dispatcher_msleep") == 0){
@@ -104,8 +113,18 @@ int main(int argc, char **argv) {
             }
         }
     }
-
-    // Terminate run program
+    pthread_mutex_lock(&mutex);
+    while(head != NULL) { // While there are jobs available go to sleep.
+        pthread_cond_wait(&dispatcher_wait, &mutex);
+    }
+    // Terminate the program - free all allocated memory
     terminate_program(read_commands_file, counter_files_array, num_of_files); 
+    // Init statistics file
+    init_stat_file();
+    fprintf(stat_boy, "total running time: %lld milliseconds", (((long long int)time(NULL) - start_time)/1000));
+    fprintf(stat_boy, "sum of jobs turnaround time: %lld milliseconds", sum_of_jobs_run_time/1000);
+    fprintf(stat_boy, "min job turnaround time: %lld milliseconds", min_job_run_time/1000);
+    fprintf(stat_boy, "avarage job turnaround time: %f milliseconds", (sum_of_jobs_run_time/num_of_jobs)/1000);
+    fprintf(stat_boy, "max job turnaround time: %lld milliseconds", max_job_run_time/1000);
     return 0;
 }
