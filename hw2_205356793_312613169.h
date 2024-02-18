@@ -29,7 +29,7 @@ pthread_cond_t dispatcher_wait = PTHREAD_COND_INITIALIZER; // Condition to signa
 
 long long int start_time; // Init lli variable to store the strting time of the program
 int num_of_threads, num_of_files, log_handler;
-job_node *head; //will serve as the head of the job queue
+job_node *head = NULL; //will serve as the head of the job queue
 int busy[MAX_THREADS_NUM] = {0}; //each cell in this list signals if thread[i] is working or not. For use of the dispatcher_wait command.
 FILE **threads_logfiles, *dispatcher_file;
 FILE **counter_files_array; // Init counter files array
@@ -121,8 +121,14 @@ void insert_job_to_queue (char line[MAX_LINE_LENGTH], time_t recored_time)
     strcpy(new_node->text, line);
     new_node->time = recored_time;
     pthread_mutex_lock(&mutex);
-    job_node *last = get_last_job_from_queue();
-    last->next = new_node;
+    if (head == NULL){
+        head = new_node;
+    }
+    else{
+        job_node *last = get_last_job_from_queue();
+        last->next = new_node;
+    }
+
     pthread_cond_signal(&job_available);
     pthread_cond_wait(&dispatcher_wait, &mutex);
     pthread_mutex_unlock(&mutex);
@@ -200,7 +206,7 @@ void parse_worker_line(char *line, int thread_id){
                 if (i == 0) {
                     command = strdup(origin);
                     cmd_ptr = command;
-                    remaining_line = strdup(origin);
+                    strcpy(remaining_line, origin);
                     rmn_ptr = remaining_line;
                 }
                 else {
@@ -213,10 +219,10 @@ void parse_worker_line(char *line, int thread_id){
                 command = strtok_r(NULL, ";", &remaining_line);                
             }
             free(temp_line);
-            free(origin);
-            free(rmn_ptr);
+            //free(origin);
+            //free(rmn_ptr);
             command = cmd_ptr;
-            free(command);
+            //free(command);
         }
         else {
             execute_command(line_ptr);
